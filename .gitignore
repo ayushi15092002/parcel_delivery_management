@@ -1,0 +1,30 @@
+# Byte-compiled / optimized Python files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+ENV/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# Local database file
+db.sqlite
+
+# Compiled Python files
+*.pyc
+
+# IDE-specific files
+.idea/
+.vscode/
+
+# Dependencies (if using pipenv)
+Pipfile.lock
+
+# If using Docker
+.dockerignore
+docker-compose.yml

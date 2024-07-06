@@ -1,0 +1,281 @@
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask_socketio import SocketIO, emit
+from flask_bcrypt import Bcrypt
+import MySQLdb.cursors
+import pandas as pd
+
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = '526ec11453a7e16396e8958ddda243ff4649c117dc89182b4e3768a81598c4e8'
+socketio = SocketIO(app)
+bcrypt = Bcrypt(app)
+
+# MySQL Connection
+db = MySQLdb.connect(host='localhost', user='root', password='', database='parcel_management')
+cursor = db.cursor()
+
+
+# Admin Dashboard Route
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if 'username' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+    
+    return render_template('dashboard.html', username=session['username'])
+
+
+# User Dashboard Route
+@app.route('/user/dashboard')
+def user_dashboard():
+    if 'username' not in session or session['role'] != 'user':
+        return redirect(url_for('login'))
+    
+    return render_template('userDashboard.html', username=session['username'])
+
+
+# Login Route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
+        user = cursor.fetchone()
+        
+        if user and bcrypt.check_password_hash(user[2], password):
+            session['username'] = username
+            session['user_id'] = user[0]
+            print("user ", user)
+            session['role'] = user[3]
+            
+            if user[3] == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            elif user[3] == 'user':
+                return redirect(url_for('user_dashboard'))
+        
+        return render_template('login.html', error='Invalid username or password')
+    
+    return render_template('login.html')
+
+
+# Signup Route
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        password_hash = bcrypt.generate_password_hash(request.form['password']).decode('utf-8')
+        role = request.form['role']
+        
+        cursor.execute('INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)', (username, password_hash, role))
+        db.commit()
+        
+        return redirect(url_for('login'))
+    
+    return render_template('signup.html')
+
+# Logout Route
+@app.route('/logout',  methods=['GET'])
+def logout():
+    session.pop('username', None)
+    session.pop('user_id', None)
+    session.pop('role', None)
+    return jsonify({'message': 'Logged out successfully'})
+
+
+# Add Parcel Route
+@app.route('/parcels/add', methods=['POST'])
+def add_parcel():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user_id = session['user_id']
+    parcel_name = request.form['parcel_name']
+    sender_name = request.form['sender_name']
+    recipient_name = request.form['recipient_name']
+    status = 'pending'  # Default status
+    
+    cursor.execute('INSERT INTO parcels (user_id, parcel_name, sender_name, recipient_name, status) VALUES (%s, %s, %s, %s, %s)', 
+                   (user_id, parcel_name, sender_name, recipient_name, status))
+    db.commit()
+    parcelId = cursor.lastrowid
+    cursor.execute('INSERT INTO transaction_logs (parcel_id, action) VALUES (%s, %s)', 
+                   (cursor.lastrowid, f'Added parcel from {sender_name} to {recipient_name}'))
+    db.commit()
+    
+    cursor.execute('SELECT * FROM parcels WHERE id = %s', (parcelId,))
+    new_parcel = cursor.fetchone()
+    print("new_parcel ", new_parcel)
+    
+    # Emit the socket event to update the parcel list
+    parcel_dict = {
+        'id': new_parcel[0],
+        'parcel_name': new_parcel[7],
+        'sender_name': new_parcel[2],
+        'recipient_name': new_parcel[3],
+        'status': new_parcel[4],
+        'created_at': new_parcel[5].strftime('%Y-%m-%d %H:%M:%S') if new_parcel[5] else None,
+        'updated_at': new_parcel[6].strftime('%Y-%m-%d %H:%M:%S') if new_parcel[6] else None
+    }
+    socketio.emit('new_parcel', parcel_dict)
+    
+    return jsonify(parcel_dict), 201
+
+
+# Get All Parcels Route
+@app.route('/parcels', methods=['GET'])
+def get_parcels():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    cursor.execute('SELECT * FROM parcels WHERE user_id = %s', (session['user_id'],))
+    parcels = cursor.fetchall()
+    
+    parcels_list = []
+    for parcel in parcels:
+        parcel_dict = {
+            'id': parcel[0],
+            'sender_name': parcel[2],
+            'recipient_name': parcel[3],
+            'status': parcel[4],
+            'created_at': parcel[5].strftime('%Y-%m-%d %H:%M:%S'),
+            'updated_at': parcel[6].strftime('%Y-%m-%d %H:%M:%S')
+        }
+        parcels_list.append(parcel_dict)
+    
+    return jsonify({'parcels': parcels_list})
+
+
+@app.route('/parcels/<int:parcel_id>', methods=['GET'])
+def get_parcels_with_id(parcel_id):
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    print("parcel_id ", parcel_id)
+
+    
+    cursor.execute('SELECT * FROM parcels WHERE id = %s', (parcel_id,))
+    parcels = cursor.fetchall()[0]
+    print("parcels ", parcels)
+    parcel_dict = {
+        'id': parcels[0],
+        'sender_name': parcels[2],
+        'recipient_name': parcels[3],
+        "parcel_name":parcels[7],
+        'status': parcels[4],
+        'created_at': parcels[5].strftime('%Y-%m-%d %H:%M:%S'),
+        'updated_at': parcels[6].strftime('%Y-%m-%d %H:%M:%S')
+    }
+
+    print("parcel_dict ", parcel_dict)
+
+    return jsonify({'parcels': parcel_dict})
+
+# Update Parcel Status Route
+@app.route('/parcels/<int:parcel_id>/update_status', methods=['PUT'])
+def update_parcel_status(parcel_id):
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    new_status = request.form['status']
+    
+    cursor.execute('UPDATE parcels SET status = %s WHERE id = %s AND user_id = %s', (new_status, parcel_id, session['user_id']))
+    db.commit()
+    
+    cursor.execute('INSERT INTO transaction_logs (parcel_id, action) VALUES (%s, %s)', (parcel_id, f'Updated status to {new_status}'))
+    db.commit()
+    
+    cursor.execute('SELECT * FROM parcels WHERE user_id = %s', (session['user_id'],))
+    parcels = cursor.fetchall()
+    
+    # Use socketio.emit instead of emit and specify the namespace if necessary
+    socketio.emit('update_parcels', {'parcels': jsonify_parcels(parcels)}, namespace='/')
+    
+    return jsonify({'message': 'Parcel status updated successfully'})
+
+# Get Parcel Logs Route
+@app.route('/parcels/<int:parcel_id>/logs', methods=['GET'])
+def get_parcel_logs(parcel_id):
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    cursor.execute('SELECT * FROM transaction_logs WHERE parcel_id = %s', (parcel_id,))
+    logs = cursor.fetchall()
+    
+    logs_list = []
+    for log in logs:
+        log_dict = {
+            'id': log[0],
+            'parcel_id': log[1],
+            'action': log[2],
+            'timestamp': log[3].strftime('%Y-%m-%d %H:%M:%S') if log[3] else None
+        }
+        logs_list.append(log_dict)
+    
+    return jsonify({'logs': logs_list})
+
+@app.route('/parcels/bulk_import', methods=['POST'])
+def bulk_import_parcel():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if 'csvFile' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    file = request.files['csvFile']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    try:
+        # Load CSV file into pandas DataFrame
+        df = pd.read_csv(file)
+        print("df ", df)
+        
+        total_records = len(df)
+        print("total_records ", total_records)
+        current_record = 0
+        
+        for index, row in df.iterrows():
+            
+            current_record += 1
+            sender_name = row['sender_name']
+            recipient_name = row['recipient_name']
+            parcel_name = row['parcel_name']            
+            # Insert into database
+            cursor.execute('INSERT INTO parcels (user_id, parcel_name, sender_name, recipient_name) VALUES (%s, %s, %s, %s)', 
+                           (session['user_id'], parcel_name, sender_name, recipient_name))
+            db.commit()
+            
+            # Emit progress update via WebSocket
+            socketio.emit('import_progress', {'message': f'Processing record {current_record} of {total_records}'})
+        
+        return jsonify({'message': 'Bulk import successful'}), 201
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def jsonify_parcels(parcels):
+    parcels_list = []
+    for parcel in parcels:
+        parcel_dict = {
+            'id': parcel[0],
+            "parcel_name":parcel[7],
+            'sender_name': parcel[2],
+            'recipient_name': parcel[3],
+            'status': parcel[4],
+            'created_at': parcel[5].strftime('%Y-%m-%d %H:%M:%S') if parcel[5] else None,
+            'updated_at': parcel[6].strftime('%Y-%m-%d %H:%M:%S') if parcel[6] else None
+        }
+        parcels_list.append(parcel_dict)
+    return parcels_list
+
+@socketio.on('connect')
+def test_connect(auth):
+    cursor.execute('SELECT * FROM parcels WHERE user_id = %s', (session['user_id'],))
+    parcels = cursor.fetchall()
+    emit('update_parcels', {'parcels': jsonify_parcels(parcels)})
+
+
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True)
