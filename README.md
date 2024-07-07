@@ -3,8 +3,8 @@
 ## Description
 This project is a Flask-based web application for managing parcel deliveries. It includes features such as user authentication, parcel management (add, update, track, and report on parcel status ) and provide real-time updates on long-running tasks, such as bulk parcel processing, and integration with a MySQL database.
 
-## Deployed Link 
-http://3.110.85.217:8501/
+## Deployment 
+The application has been deployed using AWS EC2, providing reliable hosting and accessibility at http://3.110.85.217:8501/
 
 ## Installation
 1. Clone the repository: `https://github.com/ayushi15092002/parcel_delivery_management.git` `cd parcel_delivery_management`
@@ -35,6 +35,8 @@ http://3.110.85.217:8501/
 4. User Dashboard Screen
     - Displays parcel tracking information for logged-in users.
     - Allows users to view details of their parcels, such as current status and other relevant information.
+    ![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/f8b7ff1e-866e-422c-85d4-bdff3ce29de5)
+
 
 5. Admin Dashboard Screen
     Admins can manually add new parcels, import parcels in bulk from CSV files, update parcel statuses, and search/filter parcels based on specific criteria such as parcel name, status,      and dates.
