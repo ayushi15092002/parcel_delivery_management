@@ -64,3 +64,67 @@ The application has been deployed using AWS EC2, providing reliable hosting and 
       ![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/b18f21c3-90aa-4d45-80a5-bcb676ec8be8)
     
 
+
+## API Usage
+
+### Authentication
+
+All API endpoints require authentication via session cookies. You must first authenticate via the `/login` endpoint to obtain a valid session.
+
+### Endpoints
+
+#### `POST /login`
+
+- **Description**: Authenticate and obtain a session for the user.
+- **Request Body**:
+  - `username`: Username of the user.
+  - `password`: Password of the user.
+- **Response**: Success message upon successful login and session establishment.
+
+#### `POST /signup`
+
+- **Description**: Create a new user account.
+- **Request Body**:
+  - `username`: Username for the new account.
+  - `password`: Password for the new account.
+  - `role`: Role of the new account (e.g., `user` or `admin`).
+- **Response**: Success message upon successful signup.
+
+#### `GET /parcels`
+
+- **Description**: Retrieve all parcels associated with the logged-in user.
+- **Response**: JSON array of parcels.
+
+#### `GET /parcels/<parcel_id>`
+
+- **Description**: Retrieve details of a specific parcel by ID.
+- **Response**: JSON object of the parcel details.
+
+#### `POST /parcels/add`
+
+- **Description**: Add a new parcel for the logged-in user.
+- **Request Body**:
+  - `parcel_name`: Name of the parcel.
+  - `sender_name`: Name of the sender.
+  - `recipient_name`: Name of the recipient.
+- **Response**: JSON object of the added parcel details.
+
+#### `PUT /parcels/<parcel_id>/update_status`
+
+- **Description**: Update the status of a parcel by ID.
+- **Request Body**:
+  - `status`: New status of the parcel.
+- **Response**: Success message upon successful update.
+
+#### `GET /parcels/<parcel_id>/logs`
+
+- **Description**: Retrieve transaction logs for a parcel by ID.
+- **Response**: JSON array of transaction logs.
+
+#### `POST /parcels/bulk_import`
+
+- **Description**: Bulk import parcels from a CSV file.
+- **Request Body**: FormData with a file field named `csvFile` containing the CSV file.
+- **Response**: Success message upon successful import.
+
+
