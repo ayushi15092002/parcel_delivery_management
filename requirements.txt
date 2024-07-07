@@ -1,4 +1,6 @@
-Flask
-Flask-SocketIO
-MySQL-python
-Werkzeug
+flask
+flask_socketio
+flask_bcrypt
+pymysql
+python-dotenv
+pandas
