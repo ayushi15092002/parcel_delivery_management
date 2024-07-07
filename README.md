@@ -6,6 +6,16 @@ This project is a Flask-based web application for managing parcel deliveries. It
 ## Deployment 
 The application has been deployed using AWS EC2, providing reliable hosting and accessibility at http://3.110.85.217:8501/
 
+## Technology Stack
+- **Backend**: Python, Flask
+- **Database**: MySQL
+- **Real-time Communication**: Flask-SocketIO
+- **Password Hashing**: Flask-Bcrypt
+- **Data Handling**: Pandas (for CSV import)
+- **Frontend**: HTML, CSS, JavaScript, Bootstrap
+- **Frontend Interaction**: AJAX for asynchronous data fetching
+- **Deployment**: AWS EC2
+
 ## Installation
 1. Clone the repository: `https://github.com/ayushi15092002/parcel_delivery_management.git` `cd parcel_delivery_management`
 2. Create a virutal Environment:  `python -m venv venv`
