@@ -12,7 +12,7 @@ The application has been deployed using AWS EC2, providing reliable hosting and 
 3. Activate the virtual Environment:  `.\env\Scripts\activate`
 4. Install dependencies : `pip install -r requirements.txt`
 5. Set up your environment variables by create a .env file in root directory:
-    `SECRET_KEY=your_secret_key_here
+    `
      DB_HOST=localhost
      DB_USER=root
      DB_PASSWORD=
