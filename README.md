@@ -3,6 +3,9 @@
 ## Description
 This project is a Flask-based web application for managing parcel deliveries. It includes features such as user authentication, parcel management (add, update, track, and report on parcel status ) and provide real-time updates on long-running tasks, such as bulk parcel processing, and integration with a MySQL database.
 
+## Deployed Link 
+http://3.110.85.217:8501/
+
 ## Installation
 1. Clone the repository: `https://github.com/ayushi15092002/parcel_delivery_management.git` `cd parcel_delivery_management`
 2. Create a virutal Environment:  `python -m venv venv`
@@ -19,4 +22,33 @@ This project is a Flask-based web application for managing parcel deliveries. It
 7. Run the app: `python run.py`
    
 ## Screens
-![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/d8b46edd-7d16-4e8d-9b67-af4c2eebd1bc)
+1. Login Screen
+   Allows users (both regular users and admins) to authenticate using their credentials.
+   url : http://3.110.85.217:8501/login
+   ![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/d8b46edd-7d16-4e8d-9b67-af4c2eebd1bc)
+   
+2. SignUp Screen
+   Enables new users to create accounts to access the application.
+   url: http://3.110.85.217:8501/signup
+   ![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/4da4028d-af8f-4304-869b-4cfdcf94245b)
+
+4. User Dashboard Screen
+    - Displays parcel tracking information for logged-in users.
+    - Allows users to view details of their parcels, such as current status and other relevant information.
+
+5. Admin Dashboard Screen
+    Admins can manually add new parcels, import parcels in bulk from CSV files, update parcel statuses, and search/filter parcels based on specific criteria such as parcel name, status,      and dates.
+   
+    - To view all the parcels 
+       ![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/de94714d-13f9-4b34-8b72-448402431556)
+    
+    - For Bulk Processing
+      ![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/a04328b6-741f-4ac6-b2cf-7cf438d69c49)
+      
+    - To Add new Parcel
+      ![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/6d3bbe30-2a94-45b4-b228-13bc55465ef2)
+    
+    - To view Logs of the parcel
+      ![image](https://github.com/ayushi15092002/parcel_delivery_management/assets/87222543/b18f21c3-90aa-4d45-80a5-bcb676ec8be8)
+    
+
