@@ -1,18 +1,7 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from flask_socketio import SocketIO, emit
-from flask_bcrypt import Bcrypt
-import pymysql.cursors
+from flask import render_template, request, jsonify, session, redirect, url_for
+from app import app, socketio, bcrypt, cursor, db
+from app.models import jsonify_parcels
 import pandas as pd
-
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = '526ec11453a7e16396e8958ddda243ff4649c117dc89182b4e3768a81598c4e8'
-socketio = SocketIO(app)
-bcrypt = Bcrypt(app)
-
-# MySQL Connection
-db = pymysql.connect(host='localhost', user='root', password='', database='parcel_management')
-cursor = db.cursor()
 
 @app.route('/')
 def index():
@@ -256,34 +245,21 @@ def bulk_import_parcel():
             
             # Emit progress update via WebSocket
             socketio.emit('import_progress', {'message': f'Processing record {current_record} of {total_records}'})
+        cursor.execute('SELECT * FROM parcels WHERE user_id = %s', (session['user_id'],))
+        parcels = cursor.fetchall()
+        
+        # Use socketio.emit instead of emit and specify the namespace if necessary
+        socketio.emit('update_parcels', {'parcels': jsonify_parcels(parcels)}, namespace='/')
         
         return jsonify({'message': 'Bulk import successful'}), 201
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def jsonify_parcels(parcels):
-    parcels_list = []
-    for parcel in parcels:
-        parcel_dict = {
-            'id': parcel[0],
-            "parcel_name":parcel[7],
-            'sender_name': parcel[2],
-            'recipient_name': parcel[3],
-            'status': parcel[4],
-            'created_at': parcel[5].strftime('%Y-%m-%d %H:%M:%S') if parcel[5] else None,
-            'updated_at': parcel[6].strftime('%Y-%m-%d %H:%M:%S') if parcel[6] else None
-        }
-        parcels_list.append(parcel_dict)
-    return parcels_list
 
 @socketio.on('connect')
 def test_connect(auth):
     cursor.execute('SELECT * FROM parcels WHERE user_id = %s', (session['user_id'],))
     parcels = cursor.fetchall()
-    emit('update_parcels', {'parcels': jsonify_parcels(parcels)})
+    socketio.emit('update_parcels', {'parcels': jsonify_parcels(parcels)})
 
-
-
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
